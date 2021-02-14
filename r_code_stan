@@ -1,0 +1,58 @@
+title: "FINE 435 - Group Project - Do cryptocurrencies mvoe together?"
+author: "Ananya Nair, Alexandre Saussier, Stanislas Motte"
+monofont: "Fira Code"
+highlight: breezedark
+
+#Set working directory and verify accessibility
+setwd("~/Documents/Crypto_data")
+btcusd <- read.csv(file = 'btc-usd-max.csv')
+head(btcusd)
+head(btcusd$price)
+tail(btcusd$snapped_at)
+
+# Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
+names_cryptos  <- c("btc", "eth", "aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
+                    "bnb", "bsv", "aave", "btt", "busd", "cake", "cel", "celo", "chsb", "comp", "cro", "crv", "cusdc",
+                    "dai", "dash", "dcr", "dgb", "doge", "dot", "egld", "enj", "eos", "etc", "fil", "ftm", "ftt",
+                    "grt", "hbar", "hbtc", "ht", "husd", "icx", "iost", "knc", "ksm", "leo", "link", "lrc","ltc", "luna",
+                    "matic", "mdx", "miota", "mkr", "nano", "near", "neo", "nexo", "nxm", "ocean", "okb", "omg", "ont", 
+                    "pax", "qnt", "qtum", "ren", "renbtc", "rsr", "rune", "sc", "snx", "sol", "stx", "sushi", "theta", "trx",
+                    "uma", "uni", "usdc", "usdt", "vet", "vgx", "waves", "wbtc", "xem", "xlm", "xmr", "xtz", "yfi", "zec", 
+                    "zen", "zil", "zrx")
+
+# Final storage object
+crypto_data   <- list()
+
+# Placing data in the list
+count <- 0 
+for(filename in names_cryptos){
+  count <- count + 1
+  # Assigning the data
+  crypto_data[[count]]        <- read.csv(file = paste0(filename,"-usd-max.csv"))
+
+  ##Format Data for the 100 files
+  
+  #Remove time from date
+  crypto_data[[count]]$snapped_at <- gsub("00:00:00 UTC", "", crypto_data[[count]]$snapped_at, fixed = TRUE) 
+  
+  # Define and add returns
+  crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
+  
+}
+
+tail(crypto_data[[1]])
+
+# First thing we want to do is go through each file and add columns for returns
+
+# Compute mean, Stddev, 
+# Do a PCA to find strong commonality in these factors 
+# Think about how can we predict the returns of future crypto 
+# Regularization, partial least squares 
+# overweight observations by market cap 
+# If first factor explains alot of the data, to detect bubbles you could just use one factor 
+# Lecture 7 : Predicting stock market crashes with logistic regression 
+# Back out an autoregressive factor for different lags 
+
+#STEP 1: PCA Analysis
+#STEP 2: Sentiment Reading
+#STEP 2: Cycles
