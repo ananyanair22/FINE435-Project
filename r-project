@@ -1,0 +1,38 @@
+setwd("~/Documents/Crypto_data")
+ethusd <- read.csv(file = 'eth-usd-max.xls')
+head(ethusd)
+head(ethusd['snapped_at'])
+tail(ethusd['price'])
+ethusd$snapped_at <- gsub("00:00:00 UTC", "",ethusd$snapped_at, fixed = TRUE)
+head(ethusd['snapped_at'])
+tail(ethusd)
+
+# List of all strings
+names_cryptos  <- c("aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
+"bnb", "bsv", "btc", "btt", "busd", "cake", "cel", "celo", "chsdb", "comp", "cro", "crv", "cusd",
+"dai", "dash", "dcr", "dgb", "doge", "dot", "egld", "enj", "eos", "etc", "eth", "fil", "ftm", "ftt",
+"grt", "hbar", "hbtc", "ht", "husd", "icx", "iost", "knc", "ksm", "leo", "link", "lrc","ltc", "luna",
+"matic", "mdx", "miota", "mkr", "nano", "near", "neo", "nexo", "nxm", "ocean", "okb", "omg", "ont", 
+"pax", "qnt", "qtum", "ren", "renbtc", "rsr", "rune", "sc", "snx", "sol", "stx", "sushi", "theta", "trx",
+"uma", "uni", "usdc", "usdt", "vet", "vgx", "waves", "wbtc", "xem", "xlm", "xmr", "xtz", "yfi", "zec", 
+"zen", "zil", "zrx")
+
+
+# Final storage object
+crypto_data   <- list()
+ylims_plot    <- NULL
+
+# First thing we want to do is go through each file and add columns for returns
+
+# Compute mean, Stddev, 
+# Do a PCA to find strong commonality in these factors 
+# Think about how can we predict the returns of future crypto 
+# Regularization, partial least squares 
+# overweight observations by market cap 
+# If first factor explains alot of the data, to detect bubbles you could just use one factor 
+# Lecture 7 : Predicting stock market crashes with logistic regression 
+# Back out an autoregressive factor for different lags 
+
+#STEP 1: PCA Analysis
+#STEP 2: Sentiment Reading
+#STEP 2: Cycles
