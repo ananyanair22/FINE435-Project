@@ -13,7 +13,7 @@ head(btcusd$price)
 tail(btcusd$snapped_at)
 
 # Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
-names_cryptos  <- c("btc", "eth", "aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
+names_cryptos  <- c("btc", "eth","1inch", "aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
                     "bnb", "bsv", "aave", "btt", "busd", "cake", "cel", "celo", "chsb", "comp", "cro", "crv", "cusdc",
                     "dai", "dash", "dcr", "dgb", "doge", "dot", "egld", "enj", "eos", "etc", "fil", "ftm", "ftt",
                     "grt", "hbar", "hbtc", "ht", "husd", "icx", "iost", "knc", "ksm", "leo", "link", "lrc","ltc", "luna",
