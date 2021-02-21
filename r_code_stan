@@ -3,8 +3,10 @@ author: "Ananya Nair, Alexandre Saussier, Stanislas Motte"
 monofont: "Fira Code"
 highlight: breezedark
 
+#Start fresh: clear environment
+rm(list=ls())
 #Set working directory and verify accessibility
-setwd("~/Documents/Crypto_data")
+setwd("C:\\Users\\Alexandre\\Programming\\FINE 435 - Financial Analytics\\Project\\Crypto data")
 btcusd <- read.csv(file = 'btc-usd-max.csv')
 head(btcusd)
 head(btcusd$price)
@@ -29,7 +31,7 @@ for(filename in names_cryptos){
   count <- count + 1
   # Assigning the data
   crypto_data[[count]]        <- read.csv(file = paste0(filename,"-usd-max.csv"))
-
+  
   ##Format Data for the 100 files
   
   #Remove time from date
@@ -37,14 +39,31 @@ for(filename in names_cryptos){
   
   # Define and add returns
   crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
-  
+ 
+  View(crypto_data[[count]])
 }
 
 tail(crypto_data[[1]])
 
-# First thing we want to do is go through each file and add columns for returns
 
-# Compute mean, Stddev, 
+# Compute mean, Stddev
+# Following block creates a list of the mean of log returns for each coin
+crypto_means <- list()
+count <- 0
+for(element in crypto_data){
+  count <- count + 1 
+  crypto_means[[count]] <- mean(element$return)
+}
+
+# Following block creates a list of the st deviation of log returs for each coin
+crypto_stdev <- list()
+count <- 0
+for(element in crypto_data){
+  count <- count + 1 
+  crypto_stdev[[count]] <- sd(element$return, na.rm = TRUE)
+}
+
+
 # Do a PCA to find strong commonality in these factors 
 # Think about how can we predict the returns of future crypto 
 # Regularization, partial least squares 
