@@ -45,7 +45,7 @@ for(filename in names_cryptos){
 
 tail(crypto_data[[1]])
 
-
+# Try to include everything in a dataframe with three columns: crypto name, mean, stdev
 # Compute mean, Stddev
 # Following block creates a list of the mean of log returns for each coin
 crypto_means <- list()
