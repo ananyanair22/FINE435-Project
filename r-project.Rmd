@@ -1,35 +1,118 @@
-setwd("~/Documents/Crypto_data")
-ethusd <- read.csv(file = 'eth-usd-max.xls')
-head(ethusd)
-head(ethusd['snapped_at'])
-tail(ethusd['price'])
-ethusd$snapped_at <- gsub("00:00:00 UTC", "",ethusd$snapped_at, fixed = TRUE)
-head(ethusd['snapped_at'])
-tail(ethusd)
+title: "FINE 435 - Group Project - Do cryptocurrencies mvoe together?"
+author: "Ananya Nair, Alexandre Saussier, Stanislas Motte"
+monofont: "Fira Code"
+highlight: breezedark
 
-# List of all strings
-names_cryptos  <- c("aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
-"bnb", "bsv", "btc", "btt", "busd", "cake", "cel", "celo", "chsdb", "comp", "cro", "crv", "cusd",
-"dai", "dash", "dcr", "dgb", "doge", "dot", "egld", "enj", "eos", "etc", "eth", "fil", "ftm", "ftt",
-"grt", "hbar", "hbtc", "ht", "husd", "icx", "iost", "knc", "ksm", "leo", "link", "lrc","ltc", "luna",
-"matic", "mdx", "miota", "mkr", "nano", "near", "neo", "nexo", "nxm", "ocean", "okb", "omg", "ont", 
-"pax", "qnt", "qtum", "ren", "renbtc", "rsr", "rune", "sc", "snx", "sol", "stx", "sushi", "theta", "trx",
-"uma", "uni", "usdc", "usdt", "vet", "vgx", "waves", "wbtc", "xem", "xlm", "xmr", "xtz", "yfi", "zec", 
-"zen", "zil", "zrx")
+#Start fresh: clear environment
+rm(list=ls())
+#Set working directory and verify accessibility
+setwd("C:\\Users\\Alexandre\\Programming\\FINE 435 - Financial Analytics\\Project\\Crypto data 220221")
+btcusd <- read.csv(file = 'btc-usd-max.csv')
+head(btcusd)
+head(btcusd$price)
+tail(btcusd$snapped_at)
 
+# Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
+names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","bch",
+                    "bnb", "bnt","bsv","btg","btt","busd","cake","cdai","cel",
+                    "ceth","chsb","comp","cro","crv","cusdc","dai", "dash", "dcr",
+                    "dgb", "dodo","doge","dot","egld","enj","eos","etc","fil",
+                    "ftm","ftt","grt","hbar","hbtc","hot","ht","husd","icx",
+                    "iost","ksm","leo","link","lrc","ltc","luna","matic","mdx",
+                    "miota","mkr","nano","near","neo","nexo","npxs","okb","omg",
+                    "ont","pax","qtum","renbtc","ren","rune","rvn","sc","snx",
+                    "sol","stx","sushi","theta","trx","uma","uni","usdc","usdt",
+                    "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
+                    "xsushi","xtz","xvs","yfi","zec","zen","zil","zks","zrx")
 
 # Final storage object
 crypto_data   <- list()
-ylims_plot    <- NULL
 
-# First thing we want to do is go through each file and add columns for returns
+# Placing data in the list
+count <- 0
 
-# Compute mean, Stddev, 
+#Repeat for each other instance
+for(filename in names_cryptos){
+  count <- count + 1
+  crypto_data[[count]]        <- read.csv(file = paste0(filename,"-usd-max.csv"))
+  
+  ##Format Data for the 100 files
+  
+  crypto_data[[count]]$snapped_at <- gsub("00:00:00 UTC", "", crypto_data[[count]]$snapped_at, fixed = TRUE) 
+  
+  # Define and add returns
+  crypto_data[[count]]$logReturn <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
+  #crypto_data[[count]]$return <- c(0, diff(as.numeric(paste(crypto_data[[count]]$price)))/crypto_data[[count-1]]$price)
+  
+}
+View(crypto_data[[count]])
+View(crypto_data)
+
+head(crypto_data[[1]]) #bitcoin
+head(crypto_data[[2]]) #ether
+head(crypto_data[[3]]) #aave
+# Etc...
+
+
+
+# Compute mean, Stddev,
+#Following block creates a list of the mean log returns for each coin
+crypto_meanReturn <- c()
+crypto_meanYearlyReturn <- c()
+
+count <- 0
+for(element in crypto_data){
+  count <- count + 1 
+  crypto_meanReturn[count] <- mean(element$logReturn)
+  crypto_meanYearlyReturn[count] <- (((crypto_meanReturn[count]+1)^365)-1)*100 #converts to yearly returns
+}
+View(crypto_meanReturn)
+View(crypto_meanYearlyReturn)
+
+# Following block creates a list of the st dev of log returns for each coin
+
+crypto_stDev <- c()
+crypto_yearlyStDev <- c()
+count <- 0
+for(element in crypto_data){
+  count <- count + 1 
+  crypto_stDev[count] <- sd(element$logReturn, na.rm = TRUE)
+  crypto_yearlyStDev[count] <- (((crypto_stDev[count]*sqrt(365)))) # Converts to yearly stdev
+  
+}
+View(crypto_stDev)
+View(crypto_yearlyStDev)
+
+
+# Following block computes the sharpe ratio for each crypto 
+# risk free rate on Feb 26. was 1.44% (10 Yr. U.S. Treasury yield)
+
+crypto_sharpe <- c()
+rf <- 0.0144
+count <- 0
+for (element in crypto_data){
+  count <- count + 1
+  crypto_sharpe[count] <- (crypto_meanYearlyReturn[count] - rf)/crypto_yearlyStDev[count]
+}
+View(crypto_sharpe)
+
+
+# Include everything in a dataframe with four columns: crypto name, mean, stdev, sharpe
+data.frame(df, stringsAsFactors = TRUE)
+
+column1 <- names_cryptos
+column2 <- crypto_meanReturn
+column3 <- crypto_stDev
+column4 <- crypto_sharpe
+df <- data.frame(Cryptocurrency=column1, MeanReturn=column2, StDevReturns=column3, SharpeRatio=column4)
+View(df)
+
+
 # Do a PCA to find strong commonality in these factors 
 # Think about how can we predict the returns of future crypto 
 # Regularization, partial least squares 
 # overweight observations by market cap 
-# If first factor explains alot of the data, to detect bubbles you could just use one factor 
+# If first factor explains a lot of the data, to detect bubbles you could just use one factor 
 # Lecture 7 : Predicting stock market crashes with logistic regression 
 # Back out an autoregressive factor for different lags 
 
