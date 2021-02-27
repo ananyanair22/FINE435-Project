@@ -6,21 +6,25 @@ highlight: breezedark
 #Start fresh: clear environment
 rm(list=ls())
 #Set working directory and verify accessibility
-setwd("C:\\Users\\Alexandre\\Programming\\FINE 435 - Financial Analytics\\Project\\Crypto data")
+setwd("C:\\Users\\Alexandre\\Programming\\FINE 435 - Financial Analytics\\Project\\Crypto data 220221")
 btcusd <- read.csv(file = 'btc-usd-max.csv')
 head(btcusd)
 head(btcusd$price)
 tail(btcusd$snapped_at)
 
 # Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
-names_cryptos  <- c("btc", "eth", "aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
-                    "bnb", "bsv", "aave", "btt", "busd", "cake", "cel", "celo", "chsb", "comp", "cro", "crv", "cusdc",
-                    "dai", "dash", "dcr", "dgb", "doge", "dot", "egld", "enj", "eos", "etc", "fil", "ftm", "ftt",
-                    "grt", "hbar", "hbtc", "ht", "husd", "icx", "iost", "knc", "ksm", "leo", "link", "lrc","ltc", "luna",
-                    "matic", "mdx", "miota", "mkr", "nano", "near", "neo", "nexo", "nxm", "ocean", "okb", "omg", "ont", 
-                    "pax", "qnt", "qtum", "ren", "renbtc", "rsr", "rune", "sc", "snx", "sol", "stx", "sushi", "theta", "trx",
-                    "uma", "uni", "usdc", "usdt", "vet", "vgx", "waves", "wbtc", "xem", "xlm", "xmr", "xtz", "yfi", "zec", 
-                    "zen", "zil", "zrx")
+names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","bch",
+                    "bnb", "bnt","bsv","btg","btt","busd","cake","cdai","cel",
+                    "ceth","chsb","comp","cro","crv","cusdc","dai", "dash", "dcr",
+                    "dgb", "dodo","doge","dot","egld","enj","eos","etc","fil",
+                    "ftm","ftt","grt","hbar","hbtc","hot","ht","husd","icx",
+                    "iost","ksm","leo","link","lrc","ltc","luna","matic","mdx",
+                    "miota","mkr","nano","near","neo","nexo","npxs","okb","omg",
+                    "ont","pax","qtum","renbtc","ren","rune","rvn","sc","snx",
+                    "sol","stx","sushi","theta","trx","uma","uni","usdc","usdt",
+                    "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
+                    "xsushi","xtz","xvs","yfi","zec","zen","zil","zks","zrx")
+View(names_cryptos)
 
 # Final storage object
 crypto_data   <- list()
@@ -39,36 +43,52 @@ for(filename in names_cryptos){
   
   # Define and add returns
   crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
- 
-  View(crypto_data[[count]])
 }
+View(crypto_data[[count]])
+View(crypto_data)
 
-tail(crypto_data[[1]])
+head(crypto_data[[1]]) #bitcoin
+head(crypto_data[[2]]) #ether
+head(crypto_data[[3]]) #aave
+# Etc...
 
-# Try to include everything in a dataframe with three columns: crypto name, mean, stdev, sharpe
-# Compute mean, Stddev
-# Following block creates a list of the mean of log returns for each coin
-crypto_means <- list()
+
+
+# Compute mean, Stddev,
+#Following block creates a list of the mean log returns for each coin
+crypto_means <- c()
 count <- 0
 for(element in crypto_data){
   count <- count + 1 
-  crypto_means[[count]] <- mean(element$return)
+  crypto_means[count] <- mean(element$return)
 }
+View(crypto_means)
 
-# Following block creates a list of the st deviation of log returs for each coin
-crypto_stdev <- list()
+#Following block creates a list of the st dev of log returns for each coin
+
+crypto_stdev <- c()
 count <- 0
 for(element in crypto_data){
   count <- count + 1 
-  crypto_stdev[[count]] <- sd(element$return, na.rm = TRUE)
+  crypto_stdev[count] <- sd(element$return, na.rm = TRUE)
 }
+View(crypto_stdev)
+
+# Include everything in a dataframe with four columns: crypto name, mean, stdev, sharpe
+data.frame(df, stringsAsFactors = TRUE)
+
+column1 <- names_cryptos
+column2 <- crypto_means
+column3 <- crypto_stdev
+df <- data.frame(Cryptocurrency=column1, MeanReturn=column2, StDevReturns=column3)
+View(df)
 
 
 # Do a PCA to find strong commonality in these factors 
 # Think about how can we predict the returns of future crypto 
 # Regularization, partial least squares 
 # overweight observations by market cap 
-# If first factor explains alot of the data, to detect bubbles you could just use one factor 
+# If first factor explains a lot of the data, to detect bubbles you could just use one factor 
 # Lecture 7 : Predicting stock market crashes with logistic regression 
 # Back out an autoregressive factor for different lags 
 
