@@ -1,3 +1,4 @@
+
 library(dplyr)
 
 #Set working directory and verify accessibility
@@ -6,15 +7,17 @@ btcusd <- read.csv(file = 'btc-usd-max.csv')
 
 
 # Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
-names_cryptos  <- c("btc", "eth", "1inch", "aave","ada","algo","alpha","aave","ampl", "atom", "AVAX", "bal", "bat", "bch",
-                    "bnb", "bsv", "aave", "btt", "busd", "cake", "cel", "celo", "chsb", "comp", "cro", "crv", "cusdc",
-                    "dai", "dash", "dcr", "dgb", "doge", "dot", "egld", "enj", "eos", "etc", "fil", "ftm", "ftt",
-                    "grt", "hbar", "hbtc", "ht", "husd", "icx", "iost", "knc", "ksm", "leo", "link", "lrc","ltc", "luna",
-                    "matic", "mdx", "miota", "mkr", "nano", "near", "neo", "nexo", "nxm", "ocean", "okb", "omg", "ont", 
-                    "pax", "qnt", "qtum", "ren", "renbtc", "rsr", "rune", "sc", "snx", "sol", "stx", "sushi", "theta", "trx",
-                    "uma", "uni", "usdc", "usdt", "vet", "vgx", "waves", "wbtc", "xem", "xlm", "xmr", "xtz", "yfi", "zec", 
-                    "zen", "zil", "zrx")
-
+names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","bch",
+                    "bnb", "bnt","bsv","btg","btt","busd","cake","cdai","cel",
+                    "ceth","chsb","comp","cro","crv","cusdc","dai", "dash", "dcr",
+                    "dgb", "dodo","doge","dot","egld","enj","eos","etc","fil",
+                    "ftm","ftt","grt","hbar","hbtc","hot","ht","husd","icx",
+                    "iost","ksm","leo","link","lrc","ltc","luna","matic","mdx",
+                    "miota","mkr","nano","near","neo","nexo","npxs","okb","omg",
+                    "ont","pax","qtum","renbtc","ren","rune","rvn","sc","snx",
+                    "sol","stx","sushi","theta","trx","uma","uni","usdc","usdt",
+                    "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
+                    "xsushi","xtz","xvs","yfi","zec","zen","zil","zks","zrx")
 
 # Final storage object
 crypto_data   <- list()
@@ -26,13 +29,14 @@ count <- 0
 for(filename in names_cryptos){
   count <- count + 1
   # Assigning the data
+
   crypto_data[[count]] <- read.csv(file = paste0(filename,"-usd-max.csv"))
   
   ##Format Data for the 100 files
   
   #Remove time from date
   crypto_data[[count]]$snapped_at <- gsub("00:00:00 UTC", "", crypto_data[[count]]$snapped_at, fixed = TRUE) 
- 
+  
   #Convert the date column in the dataframe to “date” class
   date <- as.Date(as.character(crypto_data$snapped_at), "%d-%m-%Y")
   
@@ -48,19 +52,19 @@ for(filename in names_cryptos){
 }
 
 #for loop through all the cryptos
-btc_betas <- matrix(, nrow = length(crypto_data), ncol = 1)
-eth_betas <- matrix(, nrow = length(crypto_data), ncol = 1)
-r_squared <- matrix(, nrow = length(crypto_data), ncol = 1)
+btc_betas <- matrix(, nrow = (length(crypto_data) -2), ncol = 1)
+eth_betas <- matrix(, nrow = (length(crypto_data)-2), ncol = 1)
+r_squared <- matrix(, nrow = (length(crypto_data)-2), ncol = 1)
 index <- 1 
 crypto_index <- 3
 
-for (index in 1:length(crypto_data))
+for (index in 1:(length(crypto_data)-2))
 {
- 
+  
   #find the intersection of dates between btc, eth and [crypto]
   dates_intersect <- intersect(intersect(as.Date(crypto_data[[1]]$date) #btc
                                          ,as.Date(crypto_data[[2]]$date)) #eth
-                               , as.Date(crypto_data[[3]]$date)) 
+                               , as.Date(crypto_data[[crypto_index]]$date)) #crypto indexed by crypto_index
   
   btc <- crypto_data[[1]]$return[as.Date(crypto_data[[1]]$date) %in% dates_intersect]
   eth <- crypto_data[[2]]$return[as.Date(crypto_data[[2]]$date) %in% dates_intersect]
@@ -71,7 +75,7 @@ for (index in 1:length(crypto_data))
   #run multivariate regression
   reg_data      <- data.frame("btc" = btc, "eth" = eth, "crypto" = crypto)
   CAPMreg_crypto  <- lm(crypto ~ btc + eth  , data = reg_data)
-
+  
   
   #storing betas and r squared values 
   btc_betas[index] <- summary(CAPMreg_crypto)$coefficients[2,1]
@@ -81,13 +85,7 @@ for (index in 1:length(crypto_data))
   #incrementing the index
   index <- index + 1
   crypto_index <- crypto_index + 1
-
+  
 }
 
-
-
-
-
-
-                           
 
