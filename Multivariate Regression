@@ -19,6 +19,8 @@ names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","b
                     "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
                     "xsushi","xtz","xvs","yfi","zec","zen","zil","zks","zrx")
 
+
+
 # Final storage object
 crypto_data   <- list()
 
@@ -55,6 +57,9 @@ for(filename in names_cryptos){
 btc_betas <- matrix(, nrow = (length(crypto_data) -2), ncol = 1)
 eth_betas <- matrix(, nrow = (length(crypto_data)-2), ncol = 1)
 r_squared <- matrix(, nrow = (length(crypto_data)-2), ncol = 1)
+p_values_btc <- matrix(, nrow = (length(crypto_data)-2), ncol = 1)
+p_values_eth <- matrix(, nrow = (length(crypto_data)-2), ncol = 1)
+
 index <- 1 
 crypto_index <- 3
 
@@ -81,11 +86,15 @@ for (index in 1:(length(crypto_data)-2))
   btc_betas[index] <- summary(CAPMreg_crypto)$coefficients[2,1]
   eth_betas[index] <- summary(CAPMreg_crypto)$coefficients[3,1]
   r_squared[index] <- summary(CAPMreg_crypto)$r.squared
+  p_values_btc[index] <- summary(CAPMreg_crypto)$coefficients[2,4]
+  p_values_eth[index] <- summary(CAPMreg_crypto)$coefficients[3,4]
+  
   
   #incrementing the index
   index <- index + 1
   crypto_index <- crypto_index + 1
   
 }
+
 
 
