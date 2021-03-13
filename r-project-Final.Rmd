@@ -51,7 +51,7 @@ head(crypto_data[[3]]) #aave
 
 
 
-# Compute mean, Stddev,
+# Compute mean, St dev,
 #Following block creates a list of the mean log returns for each coin
 crypto_meanReturn <- c()
 crypto_meanYearlyReturn <- c()
@@ -65,7 +65,7 @@ for(element in crypto_data){
 View(crypto_meanReturn)
 View(crypto_meanYearlyReturn)
 
-#Following block creates a list of the st dev of log returns for each coin
+# Following block creates a list of the st dev of log returns for each coin
 
 crypto_stDev <- c()
 crypto_yearlyStDev <- c()
@@ -83,7 +83,6 @@ View(crypto_yearlyStDev)
 # Following block computes the sharpe ratio for each crypto 
 # risk free rate on Feb 26. was 1.44% (10 Yr. U.S. Treasury yield)
 
-# compute the yearly return for each!
 crypto_sharpe <- c()
 rf <- 0.0144
 count <- 0
@@ -95,7 +94,7 @@ View(crypto_sharpe)
 
 
 # Include everything in a dataframe with four columns: crypto name, mean, stdev, sharpe
-data.frame(df, stringsAsFactors = TRUE)
+# data.frame(df, stringsAsFactors = TRUE)
 
 column1 <- names_cryptos
 column2 <- crypto_meanYearlyReturn
@@ -104,14 +103,120 @@ column4 <- crypto_sharpe
 df <- data.frame(Cryptocurrency=column1, Mean_Yearly_Return=column2, Yearly_StDev_Returns=column3, Sharpe_Ratio=column4)
 View(df)
 
-# Do a PCA to find strong commonality in these factors 
-# Think about how can we predict the returns of future crypto 
-# Regularization, partial least squares 
-# overweight observations by market cap 
-# If first factor explains a lot of the data, to detect bubbles you could just use one factor 
-# Lecture 7 : Predicting stock market crashes with logistic regression 
-# Back out an autoregressive factor for different lags 
 
-#STEP 1: PCA Analysis
-#STEP 2: Sentiment Reading
-#STEP 2: Cycles
+
+#Get the aggregate market cap of the 100 cryptos
+total_market_cap <- 0
+for (element in crypto_data){
+  total_market_cap <- total_market_cap + element$market_cap[length(element$market_cap)]# Result is 1,730,353,786,612.19
+}
+
+# Compute the weights (at the latest data point) and store them in a list
+crypto_weight <- c()
+count <- 0
+for (element in crypto_data){
+  count <- count + 1
+  crypto_weight[count] = element$market_cap[length(element$market_cap)-1] / total_market_cap
+}
+
+head(crypto_weight)
+
+
+#-------------------------------------------------------------------------------
+
+# Computations for a portfolio starting on 01/01/2018 
+
+# Remove cryptos that don't have data starting at least on 01/01/2018
+# We use a copied list, so it doesn't affect the original
+count <- 0
+valid_names_cryptos <- names_cryptos
+valid_crypto_data <- crypto_data
+
+for (element in valid_crypto_data){
+  count <- count + 1
+  if (nrow(valid_crypto_data[[count]]) < 1149){ #Num of days since 01/01/2018
+    valid_crypto_data[[count]] <- NULL
+    valid_names_cryptos <- valid_names_cryptos[-count] 
+    count <- count - 1
+  }
+}
+View(valid_names_cryptos)
+View(valid_crypto_data)
+
+# Compute the aggregate market cap on 01/01/2018
+total_market_cap_2018 <- 0
+for (element in valid_crypto_data){
+  total_market_cap_2018 <- total_market_cap_2018 + element$market_cap[length(element$market_cap)-1148] # -1148 to get the 01-01-2018 data point
+}
+
+# Compute the weights on 01/01/2018 and store them in a list
+crypto_weight_2018 <- c()
+count <- 0
+for (element in valid_crypto_data){
+  count <- count + 1
+  crypto_weight_2018[count] = element$market_cap[length(element$market_cap)-1148] / total_market_cap_2018
+}
+
+head(crypto_weight_2018)
+
+
+# Assuming we start with a portfolio worth $100,000
+p_initial_value <- 100000
+
+# Number of units of each crypto purchased
+crypto_units_owned <- c()
+count <- 0
+for(element in valid_crypto_data){
+  count <- count + 1
+  element_units_owned <- (p_initial_value * crypto_weight_2018[count]) / element$price[length(element$price)-1148]
+  crypto_units_owned[count] <- element_units_owned
+  }
+head(crypto_units_owned)
+# To do: create a dataframe with 3 columns: crypto name, units owned and initial weight for clarity
+
+
+# Let's see how much the portfolio would be worth on the latest data point (22/02/2021)
+
+# Declaring a function. Int represents the number of days after 01-01-2018
+portfolio_price <- function(int){
+  p_latest_value <- 0
+  count <- 0
+    for(element in valid_crypto_data){
+      count <- count + 1
+      element_value <- crypto_units_owned[count] * element$price[length(element$price) - 1149 + int]
+      p_latest_value <- p_latest_value + element_value
+    }
+  return(p_latest_value) 
+}
+
+portfolio_price(1149)# = latest price: $235,783.5
+
+#Following: creation of a dataframe with the portfolio price each day since 01/01/2018
+
+# First, create the list of date since 01/01/2018
+date_list <- c()
+
+for (i in 1:1149){
+  one_date <- valid_crypto_data[[1]]$snapped_at[length(valid_crypto_data[[1]]$snapped_at) - 1149 + i]
+  date_list[i] <- one_date
+}
+date_list
+
+# Second, get the price of the portfolio at each date
+p_price_list <- c()
+
+for (i in 1:1149){
+  p_price_at_date <- portfolio_price(i)
+  p_price_list[i] <- p_price_at_date
+}
+p_price_list
+
+
+# Include everything in a dataframe with two columns: date, portfolio value (+ log returns?)
+#data.frame(p_price_evolution, stringsAsFactors = TRUE)
+
+column1 <- date_list
+column2 <- p_price_list
+
+p_price_evolution <- data.frame(date=column1, portfolio_value=column2)
+View(p_price_evolution)
