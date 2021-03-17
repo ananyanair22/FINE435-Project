@@ -1,0 +1,79 @@
+
+library(dplyr)
+library(moments)
+library(stringr)
+
+#Set working directory and verify accessibility
+setwd("~/Documents/Crypto_data")
+btcusd <- read.csv(file = 'btc-usd-max.csv')
+
+
+year_2013 <- 0 
+year_2014 <- 0 
+year_2015 <- 0 
+year_2016 <- 0 
+year_2017 <- 0 
+year_2018 <- 0 
+year_2019 <- 0
+year_2020 <- 0 
+year_2021 <- 0 
+
+# Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
+names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","bch",
+                    "bnb", "bnt","bsv","btg","btt","busd","cake","cdai","cel",
+                    "ceth","chsb","comp","cro","crv","cusdc","dai", "dash", "dcr",
+                    "dgb", "dodo","doge","dot","egld","enj","eos","etc","fil",
+                    "ftm","ftt","grt","hbar","hbtc","hot","ht","husd","icx",
+                    "iost","ksm","leo","link","lrc","ltc","luna","matic","mdx",
+                    "miota","mkr","nano","near","neo","nexo","npxs","okb","omg",
+                    "ont","pax","qtum","renbtc","ren","rune","rvn","sc","snx",
+                    "sol","stx","sushi","theta","trx","uma","uni","usdc","usdt",
+                    "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
+                    "xsushi","xtz","xvs","yfi","zec","zen","zil","zks","zrx")
+
+
+
+# Final storage object
+crypto_data   <- list()
+
+
+# Placing data in the list
+count <- 0 
+crypto_df <- vector(mode = "list", length = 100)
+
+for(filename in names_cryptos){
+  count <- count + 1
+  # Assigning the data
+  
+  crypto_data[[count]] <- read.csv(file = paste0(filename,"-usd-max.csv"))
+  
+  ##Format Data for the 100 files
+  
+  #Remove time from date
+  date <- gsub("00:00:00 UTC", "", crypto_data[[count]]$snapped_at, fixed = TRUE) 
+  
+  crypto_data[[count]]$snapped_at <- str_extract(date,"^.{4}")
+  
+  #rename date column 
+  crypto_data[[count]] <- crypto_data[[count]] %>%
+    rename(
+      year = snapped_at 
+    )
+  
+  # Define and add returns
+  crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
+  crypto_df[[count]] <- as.data.frame(crypto_data[[count]])
+
+}
+
+count <- 1
+for (count in 1:length(crypto_df))
+{
+  
+
+  initiakl_year <- matrix(, nrow = 100, ncol = 2)
+  initial_year[count, 1] <- names_cryptos[count]#crypto 
+  initial_year[count, 2] <- crypto_df[[count]]$year[1] #year it was initiated 
+    
+  count <- count + 1
+}
