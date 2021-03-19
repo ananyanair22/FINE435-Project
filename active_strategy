@@ -1,0 +1,130 @@
+
+library(dplyr)
+library(moments)
+
+#Set working directory and verify accessibility
+setwd("~/Documents/Crypto_data")
+#btcusd <- read.csv(file = 'btc-usd-max.csv')
+
+
+# Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
+names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","bch",
+                    "bnb", "bnt","bsv","btg","btt","busd","cake","cdai","cel",
+                    "ceth","chsb","comp","cro","crv","cusdc","dai", "dash", "dcr",
+                    "dgb", "dodo","doge","dot","egld","enj","eos","etc","fil",
+                    "ftm","ftt","grt","hbar","hbtc","hot","ht","husd","icx",
+                    "iost","ksm","leo","link","lrc","ltc","luna","matic","mdx",
+                    "miota","mkr","nano","near","neo","nexo","npxs","okb","omg",
+                    "ont","pax","qtum","renbtc","ren","rune","rvn","sc","snx",
+                    "sol","stx","sushi","theta","trx","uma","uni","usdc","usdt",
+                    "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
+                    "xsushi","xtz","xvs","yfi","zec","zen","zil","zks","zrx")
+
+
+
+# Final storage object
+crypto_data   <- list()
+
+
+# Placing data in the list
+count <- 0 
+
+
+btc_trend <- read.csv(file = "btc_trend.csv")
+#Convert the date column in the dataframe to “date” class
+#btc_trend$date <- as.Date(as.character(btc_trend$Date), "%d-%m-%Y")
+
+vix <- read.csv(file = "VIX.csv")
+#vix$date <- as.Date(as.character(vix$date), "%d-%m-%Y")
+
+gld <- read.csv(file = "GLD.csv")
+#gld$date <- as.Date(as.character(gld$date), "%d-%m-%Y")
+
+market_portfolio <- read.csv(file = "market_portfolio.csv")
+#market_portfolio$date <- as.Date(as.character(market_portfolio$date), "%d-%m-%Y")
+
+
+for(filename in names_cryptos){
+  count <- count + 1
+  # Assigning the data
+  crypto_data[[count]] <- read.csv(file = paste0(filename,"-usd-max.csv"))
+  
+  ##Format Data for the 100 files
+  #Remove time from date
+  crypto_data[[count]]$snapped_at <- gsub("00:00:00 UTC", "", crypto_data[[count]]$snapped_at, fixed = TRUE) 
+  
+  #Convert the date column in the dataframe to “date” class
+  date <- as.Date(as.character(crypto_data$snapped_at), "%d-%m-%Y")
+  
+  #rename date column 
+  crypto_data[[count]] <- crypto_data[[count]] %>%
+    rename(
+      date = snapped_at 
+    )
+  
+  # Define and add returns
+  crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
+  
+}
+
+
+#for loop through all the cryptos
+gld_betas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+vix_betas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+btc_trend_betas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+market_portfolio_betas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+alphas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+
+r_squared <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+
+
+index <- 1 
+
+
+#for (index in 1:(length(crypto_data)))
+#{
+  
+  #find the intersection of dates between btc, eth and [crypto]
+first <- intersect(as.Date(crypto_data[[index]]$date), as.Date(btc_trend$date))
+second <- intersect(intersect(as.Date(crypto_data[[index]]$date), as.Date(btc_trend$date)),as.Date(gld$date))
+third <- intersect(second,as.Date(vix$date) )
+dates_intersect <- intersect(third,as.Date(market_portfolio$date))
+                                                    
+
+
+#alternate way --> find the intersection of dates between btc, eth and [crypto]
+dates_intersect <- intersect(intersect(intersect(intersect(as.Date(crypto_data[[index]]$date) 
+                               , as.Date(btc_trend$date)),
+                               , as.Date(vix$date))
+                               , as.Date(gld$date))
+                               , as.Date(market_portfolio$date)) 
+  
+
+  vix <- vix$return[as.Date(vix$date) %in% dates_intersect]
+  gld <- gld$return[as.Date(gld$date) %in% dates_intersect]
+  btc_trend <- btc_trend$return[as.Date(btc_trend$date) %in% dates_intersect]
+  market_portfolio <- market_portfolio$return[as.Date(market_portfolio$date) %in% dates_intersect]
+  
+  #looping through the dependent variable in the regression using the index (1 to 100)
+  crypto <- crypto_data[[index]]$return[as.Date(crypto_data[[index]]$date) %in% dates_intersect]
+  
+  #run multivariate regression
+  reg_data      <- data.frame( "crypto" = crypto, "gld" = gld, "vix" = vix, "btc_trend" = btc_trend, "market_portfolio" = market_portfolio)
+  CAPMreg_crypto  <- lm(crypto ~ gld + vix + btc_trend + market_portfolio, data = reg_data)
+  
+  
+  #storing betas and r squared values 
+  gld_betas[index] <- summary(CAPMreg_crypto)$coefficients[2,1]
+  vix_betas[index] <- summary(CAPMreg_crypto)$coefficients[3,1]
+  btc_trend_betas[index] <- summary(CAPMreg_crypto)$coefficients[4,1]
+  market_portfolio_betas[index] <- summary(CAPMreg_crypto)$coefficients[5,1]
+  alphas[index] <- summary(CAPMreg_crypto)$coefficients[1,1]
+  
+  r_squared[index] <- summary(CAPMreg_crypto)$r.squared
+  
+  
+  
+  #incrementing the index
+  index <- index + 1
+  
+#}
