@@ -43,6 +43,7 @@ gld <- read.csv(file = "GLD.csv")
 market_portfolio <- read.csv(file = "market_portfolio.csv")
 #market_portfolio$date <- as.Date(as.character(market_portfolio$date), "%d-%m-%Y")
 
+avg_returns <- matrix(, nrow = (length(crypto_data)), ncol = 1)
 
 for(filename in names_cryptos){
   count <- count + 1
@@ -64,6 +65,7 @@ for(filename in names_cryptos){
   
   # Define and add returns
   crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
+  avg_returns[count] <- mean(crypto_data[[count]]$return)
   
 }
 
@@ -76,7 +78,6 @@ market_portfolio_betas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
 alphas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
 
 r_squared <- matrix(, nrow = (length(crypto_data)), ncol = 1)
-
 
 index <- 1 
 
@@ -127,5 +128,22 @@ dates_intersect <- intersect(intersect(intersect(as.Date(crypto_data[[index]]$da
   
   #incrementing the index
   index <- index + 1
+  
+}
+
+#computing lambdas
+reg_data2      <- data.frame( "avg_returns" = avg_returns, "gld" = gld_betas, "vix" = vix_betas, "market_portfolio" = market_portfolio_betas)
+reg_apt  <- lm(avg_returns ~ gld_betas + vix_betas + market_portfolio_betas, data = reg_data2)
+
+gld_coefficient <- summary(reg_apt)$coefficients[2,1]
+vix_coefficient <-summary(reg_apt)$coefficients[3,1]
+market_coefficient <- summary(reg_apt)$coefficients[4,1]
+
+#computing the alphas 
+apt_alphas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
+
+for (index in 1:(length(crypto_data)))
+{
+  apt_alphas[index] <- avg_returns[index] - (summary(reg_apt)$coefficients[1,1] + gld_coefficient * gld_betas[index] + vix_coefficient* vix_betas[index] + market_portfolio_betas[index] * market_coefficient)
   
 }
