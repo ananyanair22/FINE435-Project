@@ -81,43 +81,44 @@ r_squared <- matrix(, nrow = (length(crypto_data)), ncol = 1)
 index <- 1 
 
 
-#for (index in 1:(length(crypto_data)))
-#{
-  
-  #find the intersection of dates between btc, eth and [crypto]
-first <- intersect(as.Date(crypto_data[[index]]$date), as.Date(btc_trend$date))
-second <- intersect(intersect(as.Date(crypto_data[[index]]$date), as.Date(btc_trend$date)),as.Date(gld$date))
-third <- intersect(second,as.Date(vix$date) )
-dates_intersect <- intersect(third,as.Date(market_portfolio$date))
+for (index in 1:(length(crypto_data)))
+{
+
+
+#crypto, btc, gold
+# pair1<- intersect(as.Date(crypto_data[[index]]$date),as.Date(market_portfolio$date))
+# pair2 <- intersect(as.Date(crypto_data[[index]]$date), as.Date(gld$date))
+# pair3 <- intersect( as.Date(gld$date), as.Date(market_portfolio$date))
+
+
                                                     
 
 
 #alternate way --> find the intersection of dates between btc, eth and [crypto]
-dates_intersect <- intersect(intersect(intersect(intersect(as.Date(crypto_data[[index]]$date) 
-                               , as.Date(btc_trend$date)),
-                               , as.Date(vix$date))
-                               , as.Date(gld$date))
-                               , as.Date(market_portfolio$date)) 
+#first <- intersect(as.Date(crypto_data[[index]]$date), as.Date(gld$date))
+#second <- intersect(first, as.Date(vix$date))
+#third <- intersect (second, as.Date(market_portfolio$date))
+dates_intersect <- intersect(intersect(intersect(as.Date(crypto_data[[index]]$date), as.Date(gld$date)), as.Date(vix$date)),as.Date(market_portfolio$date))
   
 
-  vix <- vix$return[as.Date(vix$date) %in% dates_intersect]
-  gld <- gld$return[as.Date(gld$date) %in% dates_intersect]
-  btc_trend <- btc_trend$return[as.Date(btc_trend$date) %in% dates_intersect]
-  market_portfolio <- market_portfolio$return[as.Date(market_portfolio$date) %in% dates_intersect]
+  vix_d <- vix$return[as.Date(vix$date) %in% dates_intersect]
+  gld_d <- gld$return[as.Date(gld$date) %in% dates_intersect]
+  #btc_trend_d <- btc_trend$return[as.Date(btc_trend$date) %in% dates_intersect]
+  market_portfolio_d <- market_portfolio$return[as.Date(market_portfolio$date) %in% dates_intersect]
   
   #looping through the dependent variable in the regression using the index (1 to 100)
   crypto <- crypto_data[[index]]$return[as.Date(crypto_data[[index]]$date) %in% dates_intersect]
   
   #run multivariate regression
-  reg_data      <- data.frame( "crypto" = crypto, "gld" = gld, "vix" = vix, "btc_trend" = btc_trend, "market_portfolio" = market_portfolio)
-  CAPMreg_crypto  <- lm(crypto ~ gld + vix + btc_trend + market_portfolio, data = reg_data)
+  reg_data      <- data.frame( "crypto" = crypto, "gld" = gld_d, "vix" = vix_d, "market_portfolio" = market_portfolio_d)
+  CAPMreg_crypto  <- lm(crypto ~ gld_d + vix_d + market_portfolio_d, data = reg_data)
   
   
   #storing betas and r squared values 
   gld_betas[index] <- summary(CAPMreg_crypto)$coefficients[2,1]
   vix_betas[index] <- summary(CAPMreg_crypto)$coefficients[3,1]
-  btc_trend_betas[index] <- summary(CAPMreg_crypto)$coefficients[4,1]
-  market_portfolio_betas[index] <- summary(CAPMreg_crypto)$coefficients[5,1]
+  #btc_trend_betas[index] <- summary(CAPMreg_crypto)$coefficients[4,1]
+  market_portfolio_betas[index] <- summary(CAPMreg_crypto)$coefficients[4,1]
   alphas[index] <- summary(CAPMreg_crypto)$coefficients[1,1]
   
   r_squared[index] <- summary(CAPMreg_crypto)$r.squared
@@ -127,4 +128,4 @@ dates_intersect <- intersect(intersect(intersect(intersect(as.Date(crypto_data[[
   #incrementing the index
   index <- index + 1
   
-#}
+}
