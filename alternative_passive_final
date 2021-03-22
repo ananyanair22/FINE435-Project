@@ -1,0 +1,121 @@
+#Set working directory and verify accessibility
+setwd("~/Documents/Crypto_data")
+
+
+# Build access codes for the 100 data files (Alphabetical order except BTC and ETH at top)
+names_cryptos  <- c("btc","eth","aave","ada","algo","amp","atom","avax","bat","bch",
+                    "bnb", "bnt","bsv","btg","btt","busd","cake","cdai","cel",
+                    "ceth","chsb","comp","cro","crv","cusdc","dai", "dash", "dcr",
+                    "dgb", "dodo","doge","dot","egld","enj","eos","etc","fil",
+                    "ftm","ftt","hbar","hot","ht","husd","icx",
+                    "iost","ksm","leo","link","lrc","ltc","luna","matic",
+                    "miota","mkr","nano","near","neo","nexo","npxs","okb","omg",
+                    "ont","pax","qtum","renbtc","ren","rune","rvn","sc","snx",
+                    "sol","stx","sushi","theta","trx","uma","uni","usdc","usdt",
+                    "ust","vet","vgx","waves","wbtc","xem","xlm","xmr","xrp",
+                    "xtz","xvs","yfi","zec","zen","zil","zrx")
+
+#removing the following cryptos: grt, hbtc, mdx, xsushi, zks
+
+# Final storage object
+crypto_data   <- list()
+
+
+# Placing data in the list
+count <- 0 
+
+for(filename in names_cryptos){
+  count <- count + 1
+  # Assigning the data
+  
+  crypto_data[[count]] <- read.csv(file = paste0(filename,"-usd-max.csv"))
+  
+  ##Format Data for the 100 files
+  #Remove time from date
+  crypto_data[[count]]$snapped_at <- gsub("00:00:00 UTC", "", crypto_data[[count]]$snapped_at, fixed = TRUE) 
+  
+  #Convert the date column in the dataframe to “date” class
+  date <- as.Date(as.character(crypto_data$snapped_at), "%d-%m-%Y")
+  
+  #rename date column 
+  crypto_data[[count]] <- crypto_data[[count]] %>%
+    rename(
+      date = snapped_at 
+    )
+  
+  # Define and add returns
+  crypto_data[[count]]$return <- c(0, diff(log(as.numeric(paste(crypto_data[[count]]$price)))))
+  
+}
+
+#weights in the new portfolio
+passive_wt <- read.csv(file = "passive_wt.csv")
+
+
+
+index <- 1 
+crypto_index <- 3
+weight <- 1 #this will help us loop through the different weights 
+
+ssr_results <- matrix(, nrow = 101, ncol = length(crypto_data)-2) #will store the SSR for each regression run
+
+for (index in 1:(length(crypto_data)-2))
+{
+  
+  dates_intersect <- intersect(intersect(as.Date(crypto_data[[1]]$date) #btc
+                                         ,as.Date(crypto_data[[2]]$date)) #eth
+                               , as.Date(crypto_data[[crypto_index]]$date)) #crypto indexed by crypto_index
+  
+  
+  btc <- crypto_data[[1]]$return[as.Date(crypto_data[[1]]$date) %in% dates_intersect]
+  eth <- crypto_data[[2]]$return[as.Date(crypto_data[[2]]$date) %in% dates_intersect]
+  #looping through the dependent variable in the regression using the crypto_index
+  crypto <- crypto_data[[crypto_index]]$return[as.Date(crypto_data[[crypto_index]]$date) %in% dates_intersect]
+  
+  
+  
+  for (weight in 1:101)
+  {
+    
+    #constructing the factor 
+    factor <-  matrix(, nrow = (length(btc)), ncol = 1)
+    count <- 0 
+    for (count in 1:length(factor))
+    {
+      factor[count] <- passive_wt$btc_wt[weight] * btc[count] + passive_wt$eth_wt[weight] * eth[count]
+    }
+    
+    reg_data <- data.frame("crypto" = crypto, "factor" = factor)
+    regression <- lm (crypto ~ factor, data = reg_data)
+    ssr_results[weight, index] <- sum(fitted(regression) - factor)^2
+    
+  }
+  
+  
+  index <- index + 1
+  crypto_index <- crypto_index + 1
+  
+}
+
+
+sum_ssr <- matrix(, nrow = nrow(ssr_results), ncol = 1)
+
+index <- 1
+count <- 1 
+
+for (index in 1:nrow(ssr_results))
+{
+
+sum_ssr[index,1] <- 0 
+
+  for (count in 1:ncol(ssr_results)) 
+  {
+    sum_ssr[index,1] <-   sum_ssr[index,1] + ssr_results[index, count]
+    count <- count + 1
+    
+  }
+   
+}
+
+ 
+passiv_wt[which(sum_ssr == min(sum_ssr), arr.ind = TRUE),] #92 #passive_wt btc_wt = 0.91 eth_wt = 0.09
