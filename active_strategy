@@ -99,27 +99,28 @@ for (index in 1:(length(crypto_data)))
 #first <- intersect(as.Date(crypto_data[[index]]$date), as.Date(gld$date))
 #second <- intersect(first, as.Date(vix$date))
 #third <- intersect (second, as.Date(market_portfolio$date))
-dates_intersect <- intersect(intersect(intersect(as.Date(crypto_data[[index]]$date), as.Date(gld$date)), as.Date(vix$date)),as.Date(market_portfolio$date))
+dates_intersect <- intersect(intersect(intersect(intersect(as.Date(crypto_data[[index]]$date), as.Date(gld$date)), as.Date(vix$date)),as.Date(market_portfolio$date)), as.Date(btc_trend$date))
   
 
   vix_d <- vix$return[as.Date(vix$date) %in% dates_intersect]
   gld_d <- gld$return[as.Date(gld$date) %in% dates_intersect]
-  #btc_trend_d <- btc_trend$return[as.Date(btc_trend$date) %in% dates_intersect]
+  btc_trend_d <- btc_trend$return[as.Date(btc_trend$date) %in% dates_intersect]
   market_portfolio_d <- market_portfolio$return[as.Date(market_portfolio$date) %in% dates_intersect]
   
   #looping through the dependent variable in the regression using the index (1 to 100)
   crypto <- crypto_data[[index]]$return[as.Date(crypto_data[[index]]$date) %in% dates_intersect]
   
   #run multivariate regression
-  reg_data      <- data.frame( "crypto" = crypto, "gld" = gld_d, "vix" = vix_d, "market_portfolio" = market_portfolio_d)
-  CAPMreg_crypto  <- lm(crypto ~ gld_d + vix_d + market_portfolio_d, data = reg_data)
+  reg_data      <- data.frame("crypto" = crypto, "gld" = gld_d, "vix" = vix_d, "market_portfolio" = market_portfolio_d, "btc_trend" = btc_trend_d)
+  CAPMreg_crypto  <- lm(crypto ~ gld_d + vix_d + market_portfolio_d +btc_trend_d, data = reg_data)
   
   
   #storing betas and r squared values 
   gld_betas[index] <- summary(CAPMreg_crypto)$coefficients[2,1]
   vix_betas[index] <- summary(CAPMreg_crypto)$coefficients[3,1]
-  #btc_trend_betas[index] <- summary(CAPMreg_crypto)$coefficients[4,1]
   market_portfolio_betas[index] <- summary(CAPMreg_crypto)$coefficients[4,1]
+  btc_trend_betas[index] <- summary(CAPMreg_crypto)$coefficients[5,1]
+  
   alphas[index] <- summary(CAPMreg_crypto)$coefficients[1,1]
   
   r_squared[index] <- summary(CAPMreg_crypto)$r.squared
@@ -132,18 +133,19 @@ dates_intersect <- intersect(intersect(intersect(as.Date(crypto_data[[index]]$da
 }
 
 #computing lambdas
-reg_data2      <- data.frame( "avg_returns" = avg_returns, "gld" = gld_betas, "vix" = vix_betas, "market_portfolio" = market_portfolio_betas)
-reg_apt  <- lm(avg_returns ~ gld_betas + vix_betas + market_portfolio_betas, data = reg_data2)
+reg_data2      <- data.frame( "avg_returns" = avg_returns, "gld" = gld_betas, "vix" = vix_betas, "market_portfolio" = market_portfolio_betas, "btc_trend" = btc_trend_betas)
+reg_apt  <- lm(avg_returns ~ gld_betas + vix_betas + market_portfolio_betas +btc_trend_betas, data = reg_data2)
 
 gld_coefficient <- summary(reg_apt)$coefficients[2,1]
 vix_coefficient <-summary(reg_apt)$coefficients[3,1]
 market_coefficient <- summary(reg_apt)$coefficients[4,1]
+btc_trend_coefficient <- summary(reg_apt)$coefficients[5,1]
 
-#computing the alphas 
+#computing the alphas s
 apt_alphas <- matrix(, nrow = (length(crypto_data)), ncol = 1)
 
 for (index in 1:(length(crypto_data)))
 {
-  apt_alphas[index] <- avg_returns[index] - (summary(reg_apt)$coefficients[1,1] + gld_coefficient * gld_betas[index] + vix_coefficient* vix_betas[index] + market_portfolio_betas[index] * market_coefficient)
+  apt_alphas[index] <- avg_returns[index] - (summary(reg_apt)$coefficients[1,1] + gld_coefficient * gld_betas[index] + vix_coefficient* vix_betas[index] + market_portfolio_betas[index] * market_coefficient +  btc_trend_coefficient* btc_trend_betas[index])
   
 }
