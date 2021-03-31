@@ -1,0 +1,48 @@
+setwd("~/Documents/GARCH")
+require(rugarch)
+require(dplyr)
+
+
+
+#weights in the new portfolio
+passive_1 <- read.csv(file = "passive_1.csv") #equally weighted 
+passive_2 <- read.csv(file = "passive_2.csv") #btc and eth 
+active <- read.csv(file = "active.csv")
+
+
+#date <- as.Date((crypto_data$snapped_at), "%d-%m-%Y")
+
+
+
+spec <- ugarchspec(variance.model = list(model = "fGARCH", submodel = "GARCH"), 
+                   mean.model = list(armaOrder = c(0,0), include.mean = T))
+
+#passive_1$date <- as.Date(as.character(passive_1$date), "%d-%m-%Y")
+#passive_1_noNA <- xts(x = passive_1$log_return, order.by = passive_1$date)
+
+passive_1_noNA <- xts(passive_1[, -1], order.by=as.Date(passive_1$date))
+passive_1_noNA <- passive_1_noNA[is.na(passive_1_noNA)==F]
+
+fit1 <- ugarchfit(spec, data = passive_1_noNA , solver = "hybrid")
+plot(fit1, which=1)
+plot(fit1, which=3)
+plot(fit1, which=8)
+
+
+passive_2_noNA <- xts(passive_2[, -1], order.by=as.Date(passive_2$date))
+passive_2_noNA <- passive_2_noNA[is.na(passive_2_noNA)==F]
+
+fit2 <- ugarchfit(spec, data = passive_2_noNA , solver = "hybrid")
+plot(fit2, which=1)
+plot(fit2, which=3)
+plot(fit2, which=8)
+
+
+active_noNA <- xts(active[, -1], order.by=as.Date(active$date))
+active_noNA  <- active_noNA [is.na(active_noNA )==F]
+
+fit3 <- ugarchfit(spec, data = active_noNA , solver = "hybrid")
+plot(fit3, which=1)
+plot(fit3, which=3)
+plot(fit3, which=8)
+
